@@ -13,13 +13,10 @@ static constexpr const char kDateTimeKey[] = "\"datetime\":\""; // "datetime":"
 static constexpr size_t kDateTimeKeyLen = sizeof(kDateTimeKey) - 1;
 static constexpr int kDateTimeTotalLen = 19; // YYYY-MM-DDTHH:MM:SS
 static constexpr int kDateLen = 10;          // YYYY-MM-DD
-static constexpr int kTimeStart =
-    11; // index where HH:MM:SS starts inside the datetime string
-static constexpr int kTimeLen = 8; // HH:MM:SS
-static constexpr int kDateTimeTPos =
-    10; // position of 'T' inside the datetime string
-static constexpr unsigned long kFetchIntervalMs =
-    60UL * 60UL * 1000UL; // refresh once per hour
+static constexpr int kTimeStart = 11;        // index where HH:MM:SS starts inside the datetime string
+static constexpr int kTimeLen = 8;           // HH:MM:SS
+static constexpr int kDateTimeTPos = 10;     // position of 'T' inside the datetime string
+static constexpr unsigned long kFetchIntervalMs = 60UL * 60UL * 1000UL; // refresh once per hour
 static constexpr const char* kNtpServer = "pool.ntp.org";
 static constexpr uint16_t kNtpPort = 123;
 static WiFiUDP sntpUdp;
@@ -27,11 +24,7 @@ static WiFiUDP sntpUdp;
 // Internal single instance for legacy/free-function callers
 static TimeMgr _internalTimeMgr;
 
-TimeMgr::TimeMgr()
-    : synced_(false), lastFetchMs_(0), lastTime_("--:--:--"),
-      lastDate_("----------")
-{
-}
+TimeMgr::TimeMgr() : synced_(false), lastFetchMs_(0), lastTime_("--:--:--"), lastDate_("----------") {}
 
 TimeMgr::~TimeMgr() {}
 
@@ -82,8 +75,7 @@ void TimeMgr::update()
         String preview = payload;
         if (preview.length() > 200)
             preview = preview.substring(0, 200) + "...";
-        Serial.printf("[Time] payload(len=%u): %s\n",
-                      (unsigned)payload.length(), preview.c_str());
+        Serial.printf("[Time] payload(len=%u): %s\n", (unsigned)payload.length(), preview.c_str());
 
         // Try to parse unixtime (preferred) and utc_offset
         long unixtime = 0;
@@ -118,34 +110,28 @@ void TimeMgr::update()
                 offsetSeconds = hh * 3600 + mm * 60;
                 if (sign == '-')
                     offsetSeconds = -offsetSeconds;
-                Serial.printf("[Time] parsed utc_offset=%s -> %d seconds\n",
-                              off.c_str(), offsetSeconds);
+                Serial.printf("[Time] parsed utc_offset=%s -> %d seconds\n", off.c_str(), offsetSeconds);
             }
         }
 
         if (unixtime > 0)
         {
-            lastEpochLocal_ =
-                (unsigned long)unixtime + (unsigned long)offsetSeconds;
+            lastEpochLocal_ = (unsigned long)unixtime + (unsigned long)offsetSeconds;
             lastFetchMs_ = now;
-            Serial.printf(
-                "[Time] unixtime=%ld offset=%d -> lastEpochLocal=%lu\n",
-                unixtime, offsetSeconds, lastEpochLocal_);
+            Serial.printf("[Time] unixtime=%ld offset=%d -> lastEpochLocal=%lu\n", unixtime, offsetSeconds,
+                          lastEpochLocal_);
             // initialize lastDate_/lastTime_ from epoch
             time_t t = (time_t)lastEpochLocal_;
             struct tm* tm = gmtime(&t);
             if (tm)
             {
                 char buf[32];
-                snprintf(buf, sizeof(buf), "%04d-%02d-%02d", tm->tm_year + 1900,
-                         tm->tm_mon + 1, tm->tm_mday);
+                snprintf(buf, sizeof(buf), "%04d-%02d-%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday);
                 lastDate_ = String(buf);
-                snprintf(buf, sizeof(buf), "%02d:%02d:%02d", tm->tm_hour,
-                         tm->tm_min, tm->tm_sec);
+                snprintf(buf, sizeof(buf), "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
                 lastTime_ = String(buf);
                 synced_ = true;
-                Serial.printf("[Time] initial date=%s time=%s\n",
-                              lastDate_.c_str(), lastTime_.c_str());
+                Serial.printf("[Time] initial date=%s time=%s\n", lastDate_.c_str(), lastTime_.c_str());
             }
         }
         // fallback: try the datetime key parsing (legacy)
@@ -158,8 +144,7 @@ void TimeMgr::update()
                 if (q + kDateTimeTotalLen <= payload.length())
                 {
                     String dt = payload.substring(q, q + kDateTimeTotalLen);
-                    if (dt.length() >= kDateTimeTotalLen &&
-                        dt.charAt(kDateTimeTPos) == 'T')
+                    if (dt.length() >= kDateTimeTotalLen && dt.charAt(kDateTimeTPos) == 'T')
                     {
                         // parse components YYYY-MM-DDTHH:MM:SS
                         int y = dt.substring(0, 4).toInt();
@@ -171,33 +156,25 @@ void TimeMgr::update()
 
                         // compute days since epoch using civil_from_days
                         // algorithm
-                        auto days_from_civil = [](int y, unsigned m,
-                                                  unsigned d) -> int64_t
+                        auto days_from_civil = [](int y, unsigned m, unsigned d) -> int64_t
                         {
                             y -= m <= 2;
                             const int64_t era = (y >= 0 ? y : y - 399) / 400;
                             const unsigned yoe = (unsigned)(y - era * 400);
-                            const unsigned doy =
-                                (153 * (m + (m > 2 ? -3u : 9u)) + 2) / 5 + d -
-                                1;
-                            const unsigned doe =
-                                yoe * 365 + yoe / 4 - yoe / 100 + doy;
+                            const unsigned doy = (153 * (m + (m > 2 ? -3u : 9u)) + 2) / 5 + d - 1;
+                            const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
                             return era * 146097 + (int64_t)doe - 719468;
                         };
 
-                        int64_t days =
-                            days_from_civil(y, (unsigned)mo, (unsigned)d);
-                        unsigned long epoch =
-                            (unsigned long)(days * 86400LL + hh * 3600 +
-                                            mm * 60 + ss);
+                        int64_t days = days_from_civil(y, (unsigned)mo, (unsigned)d);
+                        unsigned long epoch = (unsigned long)(days * 86400LL + hh * 3600 + mm * 60 + ss);
                         // apply utc_offset if available (offsetSeconds parsed
                         // earlier)
                         epoch -= (unsigned long)offsetSeconds;
 
                         lastEpochLocal_ = epoch;
                         lastDate_ = dt.substring(0, kDateLen);
-                        lastTime_ =
-                            dt.substring(kTimeStart, kTimeStart + kTimeLen);
+                        lastTime_ = dt.substring(kTimeStart, kTimeStart + kTimeLen);
                         synced_ = true;
                         lastFetchMs_ = now;
                         Serial.printf("[Time] fallback datetime=%s -> "
@@ -234,10 +211,8 @@ void TimeMgr::update()
                 Serial.printf("[Time][NTP] response_len=%d\n", len);
                 uint8_t buf[48];
                 sntpUdp.read(buf, 48);
-                unsigned long sec = ((unsigned long)buf[40] << 24) |
-                                    ((unsigned long)buf[41] << 16) |
-                                    ((unsigned long)buf[42] << 8) |
-                                    ((unsigned long)buf[43]);
+                unsigned long sec = ((unsigned long)buf[40] << 24) | ((unsigned long)buf[41] << 16) |
+                                    ((unsigned long)buf[42] << 8) | ((unsigned long)buf[43]);
                 const unsigned long seventyYears = 2208988800UL;
                 if (sec > seventyYears)
                 {
@@ -249,17 +224,13 @@ void TimeMgr::update()
                     if (tm)
                     {
                         char buf2[32];
-                        snprintf(buf2, sizeof(buf2), "%04d-%02d-%02d",
-                                 tm->tm_year + 1900, tm->tm_mon + 1,
-                                 tm->tm_mday);
+                        snprintf(buf2, sizeof(buf2), "%04d-%02d-%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday);
                         lastDate_ = String(buf2);
-                        snprintf(buf2, sizeof(buf2), "%02d:%02d:%02d",
-                                 tm->tm_hour, tm->tm_min, tm->tm_sec);
+                        snprintf(buf2, sizeof(buf2), "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
                         lastTime_ = String(buf2);
                     }
                     synced_ = true;
-                    Serial.printf("[Time][NTP] OK unix=%lu -> %s %s\n", unix,
-                                  lastDate_.c_str(), lastTime_.c_str());
+                    Serial.printf("[Time][NTP] OK unix=%lu -> %s %s\n", unix, lastDate_.c_str(), lastTime_.c_str());
                 }
                 else
                 {
@@ -286,8 +257,7 @@ String TimeMgr::timeString() const
     if (!tm)
         return lastTime_;
     char buf[16];
-    snprintf(buf, sizeof(buf), "%02d:%02d:%02d", tm->tm_hour, tm->tm_min,
-             tm->tm_sec);
+    snprintf(buf, sizeof(buf), "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
     return String(buf);
 }
 
@@ -302,8 +272,7 @@ String TimeMgr::dateString() const
     if (!tm)
         return lastDate_;
     char buf[16];
-    snprintf(buf, sizeof(buf), "%04d-%02d-%02d", tm->tm_year + 1900,
-             tm->tm_mon + 1, tm->tm_mday);
+    snprintf(buf, sizeof(buf), "%04d-%02d-%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday);
     return String(buf);
 }
 

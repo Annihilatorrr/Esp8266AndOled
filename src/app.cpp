@@ -1,10 +1,10 @@
 #include "app.h"
+#include "oled.h"
+#include "time_mgr.h"
+#include "timer.h"
+#include "wifi_mgr.h"
 #include <Arduino.h>
 #include <string.h> // <--- added to fix memcpy/strcpy compilation errors
-#include "wifi_mgr.h"
-#include "time_mgr.h"
-#include "oled.h"
-#include "timer.h"
 
 // Use Timer to trigger UI refresh every second
 
@@ -14,7 +14,7 @@ static char g_date[16];
 static char g_ssid[33];
 static char g_ip[20];
 
-static void copyToBuf(char *dst, size_t cap, const String &s)
+static void copyToBuf(char* dst, size_t cap, const String& s)
 {
   if (cap == 0)
     return;

@@ -2,7 +2,8 @@
 #pragma once
 #include <Arduino.h>
 
-class WifiMgr {
+class WifiMgr
+{
 public:
   WifiMgr();
   ~WifiMgr();

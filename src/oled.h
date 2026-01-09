@@ -1,8 +1,9 @@
 #pragma once
-#include <Arduino.h>
 #include "ui_status.h"
+#include <Arduino.h>
 
-class Oled {
+class Oled
+{
 public:
   Oled();
   ~Oled();

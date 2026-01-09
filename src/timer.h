@@ -1,7 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
-class Timer {
+class Timer
+{
 public:
   Timer();
   ~Timer();

@@ -4,23 +4,28 @@
 Timer::Timer() : _interval(0), _last(0), _expired(false) {}
 Timer::~Timer() {}
 
-void Timer::begin(unsigned long intervalMs) {
+void Timer::begin(unsigned long intervalMs)
+{
   _interval = intervalMs;
   _last = millis();
   _expired = false;
 }
 
-void Timer::update() {
-  if (_interval == 0) return;
+void Timer::update()
+{
+  if (_interval == 0)
+    return;
   unsigned long now = millis();
-  if (! _expired && (now - _last >= _interval)) {
+  if (!_expired && (now - _last >= _interval))
+  {
     _expired = true;
   }
 }
 
 bool Timer::expired() const { return _expired; }
 
-void Timer::reset() {
+void Timer::reset()
+{
   _last = millis();
   _expired = false;
 }

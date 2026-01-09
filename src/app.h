@@ -1,9 +1,10 @@
 #pragma once
-#include "time_mgr.h"
 #include "oled.h"
+#include "time_mgr.h"
 #include "wifi_mgr.h"
 
-class App {
+class App
+{
 public:
   void setup();
   void loop();
